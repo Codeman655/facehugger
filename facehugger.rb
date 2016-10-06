@@ -6,6 +6,7 @@ require 'pathname'
 class Facehugger < Thor
     #default config
     config = Pathname.new(File.join(ENV["HOME"],".config", "facehugger", "facehugger.yml"))
+    soruce = 
     def read_config
         #puts join("templates", "example.html")
         fp = open(config,'r')
@@ -37,5 +38,19 @@ class Facehugger < Thor
         #Read config
         files = self.read_config
         #tar files 
+    end
+
+    desc "init", "create a blank config file for facehugger"
+    def init()
+        if File.exists? config then
+            puts "config file already exists at #{config}"
+        else
+            fp = File.open(config,'w')
+            bash_sample = File.join(ENV[HOME], ".bashrc")
+            fp.wirte('---'\
+                     'bash:'\
+                     '  configfile: "#{bash_sample}"')
+            fp.close
+        end
     end
 end
