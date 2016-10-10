@@ -1,6 +1,11 @@
 # facehugger
 A way to automatically upload a set of config files to a new environment
 
+## Get it working
+1) cd to folder
+2) `bundle install`
+3) rake install
+
 ## Config File
 A config file is required. A sample config is shown below and is located in 
 `ENV[HOME]/.config/facehugger/facehugger.yml` by default.
