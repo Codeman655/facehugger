@@ -14,19 +14,19 @@ def read_config
     fp = open(Config,'r')
     YAML.load(fp.read)
 
-	#files.each_pair { |key,val|
-		#puts key
-		#puts val
-		#if File.exists?(val["configfile"]) then
-			#puts "#{val} exists"
-		#end
-#
-		#puts f["configfile"]
-		#puts f[1]['configfile']
-		#if File.exists? f[:configfile] then
-			#puts f[:configfile]
-		#end
-	#}
+    #files.each_pair { |key,val|
+    #puts key
+    #puts val
+    #if File.exists?(val["configfile"]) then
+    #puts "#{val} exists"
+    #end
+    #
+    #puts f["configfile"]
+    #puts f[1]['configfile']
+    #if File.exists? f[:configfile] then
+    #puts f[:configfile]
+    #end
+    #}
 end
 
 class Facehugger < Thor
@@ -38,61 +38,82 @@ class Facehugger < Thor
     #Credit: http://weblog.jamisbuck.org/2015/7/23/tar-gz-in-ruby.html
     desc "collect", "tar all config files into a collection"
     option :dest, :required=>false
-	def collect()
-		#Read config
-		files = read_config
+    def collect()
+        #Read config
+        files = read_config
 
-		#Check if files exist
-		list = []
-		files.each_pair { |f,c|
-			c.each_pair { |key, val|
-				case key
-				when 'configfile'
-					unless File.exists? val then
-						puts "#{val} does not exist."
-					else
-						list.push val
-					end
-				when 'configdir'
-					unless File.exists? val then
-						puts "#{val} does not exist."
-					else
-						list.push val
-					end
-				when 'command'
-					puts "command: " + val
-				else
-					'invalid key'
-				end
-			}
-		}
+        #Check if files exist
+        list = []
+        files.each_pair { |f,c|
+            unless c.is_a? Hash
+                next 
+            end
+            c.each_pair { |key, val|
+                case key
+                when 'configfile'
+                    unless File.exists? val then
+                        puts "#{val} does not exist."
+                    else
+                        list.push val
+                    end
+                when 'configdir'
+                    unless File.exists? val then
+                        puts "#{val} does not exist."
+                    else
+                        list.push val
+                    end
+                when 'command'
+                    puts "command: " + val
+                else
+                    'invalid key'
+                end
+            }
+        }
 
-		#Determine output location
-		if options[:dest] then 
-			location = Files.join(Configdir, "config_egg.tar.gz")
-		else
-			location = "config_egg.tar.gz"
-		end
+        #Determine output location
+        if options[:dest] then 
+            output_location = Files.join(Configdir, "config_egg.tar.gz")
+        else
+            output_location = "config_egg.tar.gz"
+        end
 
-		#Write tar file
-		puts "tar -czf #{location} #{list.join(' ')}"
-		`tar -czf #{location} #{list.join(' ')}`
+        #Write tar file
+        #puts "tar -czf #{output_location} #{list.join(' ')}"
+        #`tar -czf #{output_location} #{list.join(' ')}`
 
-		#Until I can figue out how to tar a directory
-		#File.open(location,"wb") { |file|
-			#Zlib::GzipWriter.wrap(file) { |gz|
-				#Gem::Package::TarWriter.new(gz) { |tar|
-					#list.each { |f|
-						#File.open(f,'r') { |fp|
-							#tar.add_file(Pathname.new(f),0444) { |io|
-								#io.write(fp.read)
-							#}
-						#}
-					#}
-				#}
-			#}
-		#}
-	end
+        #Until I can figue out how to tar a directory
+        File.open(output_location,"wb") { |output_file|
+            Zlib::GzipWriter.wrap(output_file) { |gz|
+                Gem::Package::TarWriter.new(gz) { |tar|
+                    #For each member in the config
+                    list.each { |cf|
+                        mode = File.stat(cf).mode
+                        size = File.stat(cf).size
+                        #relative_file = cf.sub /^#{Regexp::escape path}\/?/, ''
+
+                        # If configure file is a dir, tar everything underneath
+                        if File.directory? cf 
+                            puts "Tarring dir #{cf}"
+                            Dir[File.join(output_location, "**/*")].each do |subfile|
+                                if File.directory?(subfile)
+                                    tar.mkdir(subfile, mode)
+                                else
+                                    tar.add_file_simple(subfile, mode, size) do |tf|
+                                        File.open(file, "rb") { |f| tf.write f.read }
+                                    end
+                                end
+                            end
+                        else 
+                            puts "Tarring file #{cf}"
+                            tar.add_file_simple(cf, 0444,size) do |tf|
+								File.open(cf, "rb") { |f| tf.write f.read }
+                            end
+                        end
+                    }
+                }
+            }
+        }
+    end
 
     desc "alien", "prints an alien"
     def alien()
