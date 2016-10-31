@@ -29,6 +29,24 @@ def read_config
     #}
 end
 
+def r_tar(dir_path, tarfile)
+    #relative_file = cf.sub /^#{Regexp::escape path}\/?/, ''
+
+    # If configure file is a dir, tar everything underneath
+    puts "Tarring dir #{dir_path}"
+    Dir[File.join(dir_path, "**/*")].each do |subfile|
+        if File.directory?(subfile)
+            r_tar(subfile, tarfile)
+        else
+            mode = File.stat(subfile).mode
+            size = File.stat(subfile).size
+            tarfile.add_file_simple(subfile, mode, size) do |tf|
+                File.open(subfile, "rb") { |f| tf.write f.read }
+            end
+        end
+    end
+end
+
 class Facehugger < Thor
     desc "inject", "performs a secure copy (scp) to the target"
     def inject(host)
@@ -93,19 +111,10 @@ class Facehugger < Thor
 
                         # If configure file is a dir, tar everything underneath
                         if File.directory? cf 
-                            puts "Tarring dir #{cf}"
-                            Dir[File.join(output_location, "**/*")].each do |subfile|
-                                if File.directory?(subfile)
-                                    tar.mkdir(subfile, mode)
-                                else
-                                    tar.add_file_simple(subfile, mode, size) do |tf|
-                                        File.open(file, "rb") { |f| tf.write f.read }
-                                    end
-                                end
-                            end
+                            r_tar(cf,tar)
                         else 
                             puts "Tarring file #{cf}"
-                            tar.add_file_simple(cf, 0444,size) do |tf|
+                            tar.add_file_simple(cf, mode,size) do |tf|
 								File.open(cf, "rb") { |f| tf.write f.read }
                             end
                         end
