@@ -35,11 +35,12 @@ def r_tar(dir_path, tarfile)
     # If configure file is a dir, tar everything underneath
     puts "Tarring dir #{dir_path}"
     Dir[File.join(dir_path, "**/*")].each do |subfile|
+        mode = File.stat(subfile).mode
+        size = File.stat(subfile).size
         if File.directory?(subfile)
-            r_tar(subfile, tarfile)
+            tarfile.mkdir(subfile,mode)
+            #r_tar(subfile, tarfile)
         else
-            mode = File.stat(subfile).mode
-            size = File.stat(subfile).size
             tarfile.add_file_simple(subfile, mode, size) do |tf|
                 File.open(subfile, "rb") { |f| tf.write f.read }
             end
@@ -111,6 +112,7 @@ class Facehugger < Thor
 
                         # If configure file is a dir, tar everything underneath
                         if File.directory? cf 
+                            tar.mkdir(cf,mode)
                             r_tar(cf,tar)
                         else 
                             puts "Tarring file #{cf}"
