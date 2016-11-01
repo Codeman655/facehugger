@@ -8,6 +8,8 @@ require 'fileutils'
 #default config
 Configdir = Pathname.new(File.join(ENV["HOME"],".config", "facehugger"))
 Config = Pathname.new(File.join(Configdir, "facehugger.yml"))
+Egg = Files.join(Configdir, "config_egg.tar.gz")
+
 
 def read_config
     #puts join("templates", "example.html")
@@ -52,8 +54,15 @@ class Facehugger < Thor
     desc "inject", "performs a secure copy (scp) to the target"
     def inject(host)
         puts "injecting the following files to the targeted host"
+        if File.exists? Egg
+            `scp #{Egg} #{ENV["USER"]}:#{host} `
+            `ssh #{ENV["USER"]}:#{host} tar -xzf config_egg.tar.gz` 
+        else
+            puts "#{Egg} does not exist"
+            puts "Please run 'ruby facehugger collect' to create file"
+        end
     end
-
+ 
     #Credit: http://weblog.jamisbuck.org/2015/7/23/tar-gz-in-ruby.html
     desc "collect", "tar all config files into a collection"
     option :dest, :required=>false
