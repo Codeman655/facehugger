@@ -8,7 +8,7 @@ require 'fileutils'
 #default config
 Configdir = Pathname.new(File.join(ENV["HOME"],".config", "facehugger"))
 Config = Pathname.new(File.join(Configdir, "facehugger.yml"))
-Egg = Files.join(Configdir, "config_egg.tar.gz")
+Egg = File.join(Configdir, "config_egg.tar.gz")
 
 
 def read_config
@@ -52,6 +52,7 @@ end
 
 class Facehugger < Thor
     desc "inject", "performs a secure copy (scp) to the target"
+    option :host, :required=>true
     def inject(host)
         puts "injecting the following files to the targeted host"
         if File.exists? Egg
@@ -100,9 +101,9 @@ class Facehugger < Thor
 
         #Determine output location
         if options[:dest] then 
-            output_location = Files.join(Configdir, "config_egg.tar.gz")
+            output_location = Files.join(options[:dest], "config_egg.tar.gz")
         else
-            output_location = "config_egg.tar.gz"
+            output_location = Egg
         end
 
         #Write tar file
